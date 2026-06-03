@@ -1,5 +1,7 @@
 // WebSocket Connection
-const socketUrl = 'ws://' + (window.location.hostname || 'localhost') + ':8080';
+const socketUrl = window.location.hostname === 'localhost' 
+  ? 'ws://localhost:8080'
+  : 'wss://' + window.location.hostname;
 let socket;
 
 let playerName = '';
