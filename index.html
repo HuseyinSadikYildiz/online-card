@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multiplayer Hafıza Oyunu</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Screen 1a: Login (İsim Girişi) -->
+  <div id="screen-login" class="screen active">
+    <div class="login-container card-fade-in">
+      <h1 class="login-title">Hafıza Oyunu</h1>
+      <div class="input-group">
+        <input type="text" id="username-input" placeholder="İsmin ne?" autocomplete="off" maxlength="15">
+        <button id="login-btn" class="btn btn-primary">Gir</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Screen 1b: Lobby (Lobi Ekranı) -->
+  <div id="screen-lobby" class="screen">
+    <div class="lobby-container card-fade-in">
+      <div class="lobby-main-row">
+        <!-- Self Profile Card -->
+        <div class="profile-card" id="lobby-profile">
+          <div class="avatar" id="lobby-avatar">?</div>
+          <div class="username" id="lobby-username">Oyuncu</div>
+        </div>
+        
+        <!-- Create Room Button -->
+        <button id="create-room-btn" class="btn-create-room" title="Yeni Oda Oluştur">+</button>
+      </div>
+
+      <!-- Join Room Section -->
+      <div class="join-section">
+        <label for="join-room-input" class="label-small">Bir odaya katıl</label>
+        <div class="join-row">
+          <input type="text" id="join-room-input" placeholder="Oda kodunu gir" autocomplete="off" maxlength="6">
+          <button id="join-room-btn" class="btn btn-secondary">Katıl &rarr;</button>
+        </div>
+        <div id="join-error-msg" class="error-msg"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Screen 1c: Code Modal (Oda Kodu Modalı) -->
+  <div id="modal-code" class="modal-overlay">
+    <div class="modal-content card-fade-in">
+      <h2 class="modal-title">Oda Kodun</h2>
+      <div class="room-code-display" id="room-code-text">------</div>
+      <p class="modal-desc">Arkadaşın bu kodu girsin</p>
+      <button id="copy-code-btn" class="btn btn-primary">Kopyala</button>
+    </div>
+  </div>
+
+  <!-- Screen 2: Ready Stage (Hazır Ekranı) -->
+  <div id="screen-ready" class="screen">
+    <div class="ready-container card-fade-in">
+      <div class="vs-row">
+        <!-- Player 1 Card (Self or Creator) -->
+        <div class="ready-player-card" id="ready-p1">
+          <div class="avatar">A</div>
+          <div class="username">Oyuncu 1</div>
+          <div class="status-indicator">Hazır Değil</div>
+          <button class="btn btn-primary ready-action-btn">Hazır</button>
+        </div>
+
+        <div class="vs-text">VS</div>
+
+        <!-- Player 2 Card (Opponent) -->
+        <div class="ready-player-card" id="ready-p2">
+          <div class="avatar">B</div>
+          <div class="username">Oyuncu 2</div>
+          <div class="status-indicator">Hazır Değil</div>
+          <button class="btn btn-primary ready-action-btn" disabled>Bekleniyor...</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Screen 3: Game Board (Oyun Ekranı) -->
+  <div id="screen-game" class="screen">
+    <!-- Header bar -->
+    <header class="game-header">
+      <!-- Player Left (Self) -->
+      <div class="mini-profile" id="game-p-self">
+        <div class="avatar">S</div>
+        <div class="mini-info">
+          <div class="mini-name">Siz</div>
+          <div class="mini-stats">
+            Skor: <span class="score-val">0</span>
+            <span class="combo-badge hidden">🔥x2</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Turn Indicator -->
+      <div class="turn-indicator">
+        Sıra: <span id="current-turn-name">...</span>
+      </div>
+
+      <!-- Player Right (Opponent) -->
+      <div class="mini-profile" id="game-p-opp">
+        <div class="avatar">O</div>
+        <div class="mini-info">
+          <div class="mini-name">Rakip</div>
+          <div class="mini-stats">
+            Skor: <span class="score-val">0</span>
+            <span class="combo-badge hidden">🔥x2</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- 6x6 Card Grid Container -->
+    <div class="grid-container">
+      <div class="game-grid" id="card-grid">
+        <!-- Cards injected dynamically via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Screen 4: Game Over (Bitiş Ekranı) -->
+  <div id="screen-finish" class="screen">
+    <div class="finish-container card-fade-in">
+      <h1 class="finish-title">Oyun Bitti!</h1>
+      
+      <div class="finish-result-area" id="finish-result">
+        <!-- Will show winner profile or tie layout via JS -->
+      </div>
+
+      <div class="finish-actions">
+        <button id="play-again-btn" class="btn btn-primary">Tekrar Oyna</button>
+        <button id="exit-btn" class="btn btn-secondary">Çık</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Countdown Overlay (3, 2, 1, BAŞLA!) -->
+  <div id="overlay-countdown" class="overlay-fullscreen">
+    <div id="countdown-text">3</div>
+  </div>
+
+  <!-- Start Game / Turn Overlay (Başlayan seçiliyor..., [İsim] başlıyor!) -->
+  <div id="overlay-turn-start" class="overlay-fullscreen">
+    <div id="turn-start-text">Başlayan seçiliyor...</div>
+  </div>
+
+  <!-- Opponent Disconnected Overlay -->
+  <div id="overlay-disconnect" class="overlay-fullscreen">
+    <div class="disconnect-card">
+      <h2>Rakip bağlantısı kesildi</h2>
+      <p>Ana ekrana dönülüyor...</p>
+    </div>
+  </div>
+
+  <!-- Toast Notifications (Kopyalandı, vb.) -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <script src="game.js"></script>
+</body>
+</html>
