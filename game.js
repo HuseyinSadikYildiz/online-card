@@ -1,7 +1,7 @@
 // WebSocket Connection
 const socketUrl = window.location.hostname === 'localhost'
   ? 'ws://localhost:8080'
-  : 'wss://online-card-production.up.railway.app';let socket;
+  : 'online-card-production.up.railway.app';let socket;
 
 let playerName = '';
 let roomCode = '';
