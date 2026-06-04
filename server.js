@@ -320,6 +320,33 @@ wss.on('connection', (ws) => {
           break;
         }
 
+        case 'cursor_move': {
+          const room = rooms.get(ws.roomCode);
+          if (!room) return;
+          const opponent = room.players.find(p => p.ws !== ws);
+          if (opponent) {
+            sendToClient(opponent.ws, 'cursor_move', {
+              x: payload.x,
+              y: payload.y,
+              sender: ws.playerName
+            });
+          }
+          break;
+        }
+
+        case 'card_hover': {
+          const room = rooms.get(ws.roomCode);
+          if (!room) return;
+          const opponent = room.players.find(p => p.ws !== ws);
+          if (opponent) {
+            sendToClient(opponent.ws, 'card_hover', {
+              index: payload.index,
+              sender: ws.playerName
+            });
+          }
+          break;
+        }
+
         default:
           console.log('Unhandled message type:', type);
       }
