@@ -16,7 +16,6 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  cursor: none !important;
 }
 
 body {
@@ -839,38 +838,4 @@ h1, h2, h3, h4 {
   .finish-actions button {
     width: 100%;
   }
-}
-
-/* Custom Cursors */
-.custom-cursor {
-  position: fixed;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 10000;
-  transform: translate(-50%, -50%);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-  display: none;
-}
-
-.custom-cursor.blue {
-  background-color: rgba(0, 122, 255, 0.85);
-  border: 2px solid #ffffff;
-}
-
-.custom-cursor.red {
-  background-color: rgba(255, 59, 48, 0.85);
-  border: 2px solid #ffffff;
-}
-
-/* Card Hover Custom Scale & Glow Effects */
-.memory-card.self-hovered .card-inner {
-  transform: translateY(-4px) scale(1.05) !important;
-  box-shadow: 0 8px 24px rgba(0, 122, 255, 0.35) !important;
-}
-
-.memory-card.opponent-hovered .card-inner {
-  transform: translateY(-4px) scale(1.05) !important;
-  box-shadow: 0 8px 24px rgba(255, 59, 48, 0.35) !important;
 }
