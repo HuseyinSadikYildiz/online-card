@@ -6,11 +6,11 @@ console.log('WebSocket server is running on ws://localhost:8080');
 const rooms = new Map();
 
 const emojiPool = {
-  animals: ['🐶', '🐱', '🦊', '🐻', '🐼', '🦁', '🐯', '🦋', '🐸', '🦄'],
-  nature: ['🌸', '🌊', '⚡', '🔥', '🌙', '⭐', '🌈', '🍀'],
-  food: ['🍕', '🍔', '🍣', '🍩', '🍦', '🎂', '🍓', '🍉'],
-  objects: ['🎮', '🎸', '🚀', '💎', '🎯', '🏆', '🎪', '🎭'],
-  symbols: ['♟️', '🎲', '🧩', '🎴', '🃏', '🔮', '🎱', '🎰']
+  animals: ['🐶', '🐱', '🦊', '🐻', '🐼', '🦁', '🐯', '🦋', '🐸', '🦄', '🐷', '🐨', '🐰', '🐙', '🐒', '🐔', '🐧', '🐦', '🐣', '🦆', '🦅', '🦉', '🦇', '🐺', '🐗', '🐴', '🐝', '🐛', '🐌', '🐞', '🐢', '🐠'],
+  nature: ['🌸', '🌊', '⚡', '🔥', '🌙', '⭐', '🌈', '🍀', '☀️', '☁️', '❄️', '🍁', '🍂', '🍃', '🎋', '🌵', '🎄', '🌲', '🌳', '🌴', '🌻', '🌹', '🌷', '🌼', '🌾', '🌿', '🍄', '🌕', '☄️', '🌋', '🏔️', '🏝️'],
+  food: ['🍕', '🍔', '🍣', '🍩', '🍦', '🎂', '🍓', '🍉', '🍎', '🍌', '🍒', '🍇', '🍍', '🍑', '🍈', '🍊', '🍟', '🌭', '🍿', '🍪', '🍫', '🍬', '🍭', '🍯', '🍰', '🥞', '🍳', '🧇', '🥗', '🌮', '🍜', '🥤'],
+  objects: ['🎮', '🎸', '🚀', '💎', '🎯', '🏆', '🎪', '🎭', '🎈', '🎁', '🔔', '🔑', '📦', '📖', '✏️', '📐', '🔍', '💡', '⏰', '🛠️', '⚔️', '🛡️', '⚙️', '🧪', '📡', '🔋', '📸', '🎨', '🛹', '⚽', '🏀', '🚗'],
+  symbols: ['♟️', '🎲', '🧩', '🎴', '🃏', '🔮', '🎱', '🎰', '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '💖', '🌟', '💢', '🌀', '💤', '🌐', '💠', '🔱', '🔲', '🔳', '🔴', '🔵', '🟡', '🟢', '🟣', '🟠']
 };
 
 function generateRoomCode() {
@@ -31,17 +31,32 @@ function shuffle(array) {
 }
 
 function initGame(room) {
-  const allEmojis = [
-    ...emojiPool.animals,
-    ...emojiPool.nature,
-    ...emojiPool.food,
-    ...emojiPool.objects,
-    ...emojiPool.symbols
-  ];
+  let pool = [];
+  const theme = room.settings.theme;
+  if (theme === 'mix') {
+    pool = [
+      ...emojiPool.animals,
+      ...emojiPool.nature,
+      ...emojiPool.food,
+      ...emojiPool.objects,
+      ...emojiPool.symbols
+    ];
+  } else {
+    pool = emojiPool[theme] || emojiPool.animals;
+  }
   
-  // Pick 18 unique emojis
-  const shuffledPool = shuffle(allEmojis);
-  const selectedEmojis = shuffledPool.slice(0, 18);
+  // Determine card pairs needed
+  let pairsCount = 18; // Default 6x6
+  const gridSize = room.settings.gridSize;
+  if (gridSize === '4x4') {
+    pairsCount = 8;
+  } else if (gridSize === '8x8') {
+    pairsCount = 32;
+  }
+
+  // Pick unique emojis from pool
+  const shuffledPool = shuffle(pool);
+  const selectedEmojis = shuffledPool.slice(0, pairsCount);
   
   // Duplicate and shuffle
   const gameCards = shuffle([...selectedEmojis, ...selectedEmojis]);
@@ -76,6 +91,7 @@ function broadcastRoomState(room) {
       ready: p.ready,
       playAgain: p.playAgain
     })),
+    settings: room.settings,
     gameState: room.gameState
   };
 
@@ -122,6 +138,13 @@ wss.on('connection', (ws) => {
                 playAgain: false
               }
             ],
+            settings: {
+              maxPlayers: 2,
+              gridSize: '6x6',
+              theme: 'mix',
+              cardBack: 'classic',
+              cursorMode: 'all'
+            },
             gameState: {
               cards: [],
               flipped: [],
@@ -137,6 +160,20 @@ wss.on('connection', (ws) => {
           break;
         }
 
+        case 'update_settings': {
+          const room = rooms.get(ws.roomCode);
+          if (!room) return;
+          // Only host (first player in list) can update settings
+          if (room.players[0] && room.players[0].ws === ws) {
+            room.settings = {
+              ...room.settings,
+              ...payload
+            };
+            broadcastRoomState(room);
+          }
+          break;
+        }
+
         case 'join_room': {
           const { name, code } = payload;
           const upperCode = code ? code.trim().toUpperCase() : '';
@@ -146,8 +183,12 @@ wss.on('connection', (ws) => {
             sendToClient(ws, 'join_error', { message: 'Geçersiz kod' });
             return;
           }
-          if (room.players.length >= 2) {
+          if (room.players.length >= room.settings.maxPlayers) {
             sendToClient(ws, 'join_error', { message: 'Oda dolu' });
+            return;
+          }
+          if (room.gameState.phase === 'playing') {
+            sendToClient(ws, 'join_error', { message: 'Oyun devam ediyor' });
             return;
           }
 
@@ -164,7 +205,7 @@ wss.on('connection', (ws) => {
           ws.roomCode = upperCode;
           ws.playerName = name;
 
-          // Once 2nd player joins, we are in 'ready' phase
+          // Once players join, change phase to 'ready'
           room.gameState.phase = 'ready';
           broadcastRoomState(room);
           break;
@@ -179,12 +220,10 @@ wss.on('connection', (ws) => {
             player.ready = payload.ready;
           }
 
-          // Check if both players are ready
-          const bothReady = room.players.length === 2 && room.players.every(p => p.ready);
-          
-          if (bothReady) {
-            // Setup the board but keep it ready, we can let client countdown first, or start play
-            // Let's initialize the game
+          // Auto-start if all joined players are ready AND room is full
+          const allReady = room.players.length >= 2 && room.players.every(p => p.ready);
+          const roomFull = room.players.length === room.settings.maxPlayers;
+          if (allReady && roomFull) {
             initGame(room);
           }
 
@@ -195,8 +234,10 @@ wss.on('connection', (ws) => {
         case 'start_game': {
           const room = rooms.get(ws.roomCode);
           if (!room) return;
-          // In case start_game message is received to kick off the game phase
-          if (room.gameState.phase !== 'playing') {
+          
+          const isHost = room.players[0] && room.players[0].ws === ws;
+          const allReady = room.players.length >= 2 && room.players.every(p => p.ready);
+          if (isHost && allReady) {
             initGame(room);
             broadcastRoomState(room);
           }
@@ -210,11 +251,12 @@ wss.on('connection', (ws) => {
           // Check turn
           if (room.gameState.currentTurn !== ws.playerName) return;
 
-          // Ignore if 2 cards already flipped (waiting for timer)
+          // Ignore if 2 cards already flipped
           if (room.gameState.flipped.length >= 2) return;
 
           const index = parseInt(payload.index);
-          if (isNaN(index) || index < 0 || index >= 36) return;
+          const cardCount = room.gameState.cards.length;
+          if (isNaN(index) || index < 0 || index >= cardCount) return;
 
           // Ignore if already matched or already flipped
           if (room.gameState.matched.includes(index) || room.gameState.flipped.includes(index)) {
@@ -224,7 +266,7 @@ wss.on('connection', (ws) => {
           room.gameState.flipped.push(index);
           broadcastRoomState(room);
 
-          // If 2 cards are flipped, evaluate match
+          // Evaluate match if 2 cards are flipped
           if (room.gameState.flipped.length === 2) {
             const idx1 = room.gameState.flipped[0];
             const idx2 = room.gameState.flipped[1];
@@ -232,15 +274,13 @@ wss.on('connection', (ws) => {
             const card2 = room.gameState.cards[idx2];
 
             const activePlayer = room.players.find(p => p.name === room.gameState.currentTurn);
-            const passivePlayer = room.players.find(p => p.name !== room.gameState.currentTurn);
 
             if (card1 === card2) {
-              // MATCH - 0.5 seconds delay before updating state
+              // MATCH - 0.5s delay
               setTimeout(() => {
                 const currentRoom = rooms.get(ws.roomCode);
                 if (!currentRoom || currentRoom.gameState.phase !== 'playing') return;
 
-                // Ensure they haven't disconnected or state changed in-between
                 if (currentRoom.gameState.flipped.includes(idx1) && currentRoom.gameState.flipped.includes(idx2)) {
                   currentRoom.gameState.matched.push(idx1, idx2);
                   currentRoom.gameState.flipped = [];
@@ -251,7 +291,7 @@ wss.on('connection', (ws) => {
                   }
 
                   // Check if game over
-                  if (currentRoom.gameState.matched.length === 36) {
+                  if (currentRoom.gameState.matched.length === currentRoom.gameState.cards.length) {
                     currentRoom.gameState.phase = 'finished';
                   }
 
@@ -259,7 +299,7 @@ wss.on('connection', (ws) => {
                 }
               }, 500);
             } else {
-              // MISMATCH - 1.0 second delay before flipping back and changing turn
+              // MISMATCH - 1.0s delay
               setTimeout(() => {
                 const currentRoom = rooms.get(ws.roomCode);
                 if (!currentRoom || currentRoom.gameState.phase !== 'playing') return;
@@ -271,10 +311,10 @@ wss.on('connection', (ws) => {
                     activePlayer.combo = 0;
                   }
 
-                  // Switch turn
-                  if (passivePlayer) {
-                    currentRoom.gameState.currentTurn = passivePlayer.name;
-                  }
+                  // Cycle turn to next player in room
+                  const currentIdx = currentRoom.players.findIndex(p => p.name === currentRoom.gameState.currentTurn);
+                  const nextIdx = (currentIdx + 1) % currentRoom.players.length;
+                  currentRoom.gameState.currentTurn = currentRoom.players[nextIdx].name;
 
                   broadcastRoomState(currentRoom);
                 }
@@ -293,17 +333,15 @@ wss.on('connection', (ws) => {
             player.playAgain = true;
           }
 
-          const allPlayAgain = room.players.length === 2 && room.players.every(p => p.playAgain);
+          const allPlayAgain = room.players.every(p => p.playAgain);
 
           if (allPlayAgain) {
-            // Reset player fields
             room.players.forEach(p => {
               p.score = 0;
               p.combo = 0;
               p.ready = false;
               p.playAgain = false;
             });
-            // Return to ready phase
             room.gameState.phase = 'ready';
             room.gameState.cards = [];
             room.gameState.flipped = [];
@@ -323,27 +361,43 @@ wss.on('connection', (ws) => {
         case 'cursor_move': {
           const room = rooms.get(ws.roomCode);
           if (!room) return;
-          const opponent = room.players.find(p => p.ws !== ws);
-          if (opponent) {
-            sendToClient(opponent.ws, 'cursor_move', {
-              x: payload.x,
-              y: payload.y,
-              sender: ws.playerName
-            });
-          }
+          room.players.forEach(p => {
+            if (p.ws !== ws) {
+              sendToClient(p.ws, 'cursor_move', {
+                x: payload.x,
+                y: payload.y,
+                sender: ws.playerName
+              });
+            }
+          });
           break;
         }
 
         case 'card_hover': {
           const room = rooms.get(ws.roomCode);
           if (!room) return;
-          const opponent = room.players.find(p => p.ws !== ws);
-          if (opponent) {
-            sendToClient(opponent.ws, 'card_hover', {
-              index: payload.index,
-              sender: ws.playerName
-            });
-          }
+          room.players.forEach(p => {
+            if (p.ws !== ws) {
+              sendToClient(p.ws, 'card_hover', {
+                index: payload.index,
+                sender: ws.playerName
+              });
+            }
+          });
+          break;
+        }
+
+        case 'send_reaction': {
+          const room = rooms.get(ws.roomCode);
+          if (!room) return;
+          room.players.forEach(p => {
+            if (p.ws !== ws) {
+              sendToClient(p.ws, 'receive_reaction', {
+                emoji: payload.emoji,
+                sender: ws.playerName
+              });
+            }
+          });
           break;
         }
 
@@ -368,18 +422,34 @@ function handleLeave(ws, isDisconnect = false) {
   const room = rooms.get(code);
   if (!room) return;
 
-  // Find remaining player
-  const remainingPlayer = room.players.find(p => p.ws !== ws);
-
-  if (remainingPlayer) {
-    // Notify opponent
-    const msgType = isDisconnect ? 'opponent_disconnected' : 'opponent_left';
-    sendToClient(remainingPlayer.ws, msgType, { message: 'Rakip odadan ayrıldı' });
-    
-    // Clean up opponent room link
-    remainingPlayer.ws.roomCode = null;
+  // Find index of leaving player
+  const leaveIdx = room.players.findIndex(p => p.ws === ws);
+  if (leaveIdx !== -1) {
+    room.players.splice(leaveIdx, 1);
   }
 
-  // Clear room
-  rooms.delete(code);
+  // Clean up leaving player's link
+  ws.roomCode = null;
+
+  if (room.players.length === 0) {
+    // Clear room if no players left
+    rooms.delete(code);
+  } else {
+    // If game was playing and leaving player made active players < 2, finish game
+    if (room.gameState.phase === 'playing' && room.players.length < 2) {
+      room.gameState.phase = 'finished';
+      broadcastRoomState(room);
+    } else {
+      // If it was the leaving player's turn, change turn
+      if (room.gameState.phase === 'playing' && room.gameState.currentTurn === ws.playerName) {
+        const nextIdx = leaveIdx % room.players.length;
+        room.gameState.currentTurn = room.players[nextIdx].name;
+      }
+      // Notify remaining players
+      room.players.forEach(p => {
+        sendToClient(p.ws, 'player_left', { name: ws.playerName });
+      });
+      broadcastRoomState(room);
+    }
+  }
 }
