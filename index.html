@@ -41,11 +41,12 @@
           <button id="join-room-btn" class="btn btn-secondary">Katıl &rarr;</button>
         </div>
         <div id="join-error-msg" class="error-msg"></div>
+        <button id="single-player-btn" class="btn btn-primary" style="margin-top: 24px; width: 100%;">Tek Başına Oyna</button>
       </div>
     </div>
   </div>
 
-  <!-- Screen 1c: Code Modal (Oda Kodu Modalı) -->
+  <!-- Screen 1c: Code Modal (Oda Kodu Modalı) - Keeping for reference if needed, but not used since code is displayed directly in lobby -->
   <div id="modal-code" class="modal-overlay">
     <div class="modal-content card-fade-in">
       <h2 class="modal-title">Oda Kodun</h2>
@@ -55,70 +56,110 @@
     </div>
   </div>
 
-  <!-- Screen 2: Ready Stage (Hazır Ekranı) -->
+  <!-- Screen 2: Ready Stage (Hazır Ekranı / Oda Ekranı) -->
   <div id="screen-ready" class="screen">
-    <div class="ready-container card-fade-in">
-      <div class="vs-row">
-        <!-- Player 1 Card (Self or Creator) -->
-        <div class="ready-player-card" id="ready-p1">
-          <div class="avatar">A</div>
-          <div class="username">Oyuncu 1</div>
-          <div class="status-indicator">Hazır Değil</div>
-          <button class="btn btn-primary ready-action-btn">Hazır</button>
+    <div class="room-container card-fade-in">
+      <div class="room-layout">
+        
+        <!-- Settings Panel -->
+        <div class="settings-panel" id="lobby-settings-panel">
+          <h2 class="panel-title">Oda Ayarları</h2>
+          <div class="settings-group">
+            <label for="setting-grid-size">Tablo Boyutu</label>
+            <select id="setting-grid-size" class="select-input">
+              <option value="4x4">4x4 (16 Kart)</option>
+              <option value="6x6" selected>6x6 (36 Kart)</option>
+              <option value="8x8">8x8 (64 Kart)</option>
+            </select>
+          </div>
+          
+          <div class="settings-group">
+            <label for="setting-theme">Kart Teması (Emoji)</label>
+            <select id="setting-theme" class="select-input">
+              <option value="mix" selected>Karışık</option>
+              <option value="animals">Hayvanlar</option>
+              <option value="nature">Doğa</option>
+              <option value="food">Yiyecekler</option>
+              <option value="objects">Nesneler</option>
+              <option value="symbols">Semboller</option>
+            </select>
+          </div>
+
+          <div class="settings-group">
+            <label for="setting-card-back">Kart Arkası</label>
+            <select id="setting-card-back" class="select-input">
+              <option value="classic" selected>Klasik Siyah</option>
+              <option value="neon">Neon Mor</option>
+              <option value="cosmic">Kozmik Uzay</option>
+            </select>
+          </div>
+
+          <div class="settings-group">
+            <label for="setting-max-players">Maks Oyuncu</label>
+            <select id="setting-max-players" class="select-input">
+              <option value="2" selected>2 Oyuncu</option>
+              <option value="3">3 Oyuncu</option>
+              <option value="4">4 Oyuncu</option>
+            </select>
+          </div>
+
+          <div class="settings-group">
+            <label for="setting-cursor-mode">İmleç Görünürlüğü</label>
+            <select id="setting-cursor-mode" class="select-input">
+              <option value="all" selected>Herkesin Faresi</option>
+              <option value="active_only">Sadece Sıradakinin Faresi</option>
+            </select>
+          </div>
         </div>
 
-        <div class="vs-text">VS</div>
-
-        <!-- Player 2 Card (Opponent) -->
-        <div class="ready-player-card" id="ready-p2">
-          <div class="avatar">B</div>
-          <div class="username">Oyuncu 2</div>
-          <div class="status-indicator">Hazır Değil</div>
-          <button class="btn btn-primary ready-action-btn" disabled>Bekleniyor...</button>
+        <!-- Players List Panel -->
+        <div class="players-panel">
+          <div class="room-header-row">
+            <h2 class="panel-title">Oyuncular</h2>
+            <div class="room-code-badge" id="lobby-room-code-badge" title="Tıkla ve Kopyala">Oda Kodu: <span id="lobby-room-code-val">------</span></div>
+          </div>
+          <div class="players-slots-grid" id="players-slots">
+            <!-- Dynamic Slots via JS -->
+          </div>
+          
+          <div class="lobby-action-row">
+            <button id="ready-toggle-btn" class="btn btn-secondary">Hazır Ol</button>
+            <button id="host-start-btn" class="btn btn-primary" disabled>Oyunu Başlat</button>
+          </div>
         </div>
+
       </div>
     </div>
   </div>
 
   <!-- Screen 3: Game Board (Oyun Ekranı) -->
   <div id="screen-game" class="screen">
-    <!-- Header bar -->
-    <header class="game-header">
-      <!-- Player Left (Self) -->
-      <div class="mini-profile" id="game-p-self">
-        <div class="avatar">S</div>
-        <div class="mini-info">
-          <div class="mini-name">Siz</div>
-          <div class="mini-stats">
-            Skor: <span class="score-val">0</span>
-            <span class="combo-badge hidden">🔥x2</span>
-          </div>
-        </div>
-      </div>
+    <!-- 4 Corner Profiles -->
+    <div class="corner-profile top-left" id="game-p-0"></div>
+    <div class="corner-profile top-right" id="game-p-1"></div>
+    <div class="corner-profile bottom-left" id="game-p-2"></div>
+    <div class="corner-profile bottom-right" id="game-p-3"></div>
 
-      <!-- Turn Indicator -->
-      <div class="turn-indicator">
-        Sıra: <span id="current-turn-name">...</span>
-      </div>
+    <!-- Center HUD (Turn info, Single timer/moves) -->
+    <div class="center-game-hud">
+      <div class="hud-item" id="hud-turn-info">Sıra: <span id="current-turn-name">...</span></div>
+      <div class="hud-item hidden" id="hud-timer-info">Süre: <span id="single-timer">00:00</span></div>
+      <div class="hud-item hidden" id="hud-moves-info">Hamle: <span id="single-moves">0</span></div>
+    </div>
 
-      <!-- Player Right (Opponent) -->
-      <div class="mini-profile" id="game-p-opp">
-        <div class="avatar">O</div>
-        <div class="mini-info">
-          <div class="mini-name">Rakip</div>
-          <div class="mini-stats">
-            Skor: <span class="score-val">0</span>
-            <span class="combo-badge hidden">🔥x2</span>
-          </div>
-        </div>
-      </div>
-    </header>
-
-    <!-- 6x6 Card Grid Container -->
+    <!-- Card Grid Container -->
     <div class="grid-container">
       <div class="game-grid" id="card-grid">
         <!-- Cards injected dynamically via JS -->
       </div>
+    </div>
+
+    <!-- Emoji Reaction Panel -->
+    <div class="reaction-trigger-panel" id="reaction-panel">
+      <button class="reaction-btn" data-emoji="😄">😄</button>
+      <button class="reaction-btn" data-emoji="😡">😡</button>
+      <button class="reaction-btn" data-emoji="🔥">🔥</button>
+      <button class="reaction-btn" data-emoji="👏">👏</button>
     </div>
   </div>
 
@@ -143,27 +184,26 @@
     <div id="countdown-text">3</div>
   </div>
 
-  <!-- Start Game / Turn Overlay (Başlayan seçiliyor..., [İsim] başlıyor!) -->
-  <div id="overlay-turn-start" class="overlay-fullscreen">
-    <div id="turn-start-text">Başlayan seçiliyor...</div>
+  <!-- Roulette Starting Player Overlay -->
+  <div id="overlay-roulette" class="">
+    <div class="roulette-label">Başlayan seçiliyor...</div>
+    <div class="roulette-name" id="roulette-name">?</div>
   </div>
 
   <!-- Opponent Disconnected Overlay -->
   <div id="overlay-disconnect" class="overlay-fullscreen">
     <div class="disconnect-card">
-      <h2>Rakip bağlantısı kesildi</h2>
+      <h2>Bir oyuncu ayrıldı</h2>
       <p>Ana ekrana dönülüyor...</p>
     </div>
   </div>
 
-  <!-- Toast Notifications (Kopyalandı, vb.) -->
+  <!-- Toast Notifications -->
   <div id="toast-container" class="toast-container"></div>
 
-  <!-- Custom cursors for real-time multiplayer cursor sharing -->
+  <!-- Local cursor (your own) -->
   <div id="local-cursor" class="custom-cursor"></div>
-  <div id="remote-cursor" class="custom-cursor">
-    <span class="cursor-label"></span>
-  </div>
+  <!-- Remote cursors are dynamically created by JS -->
 
   <script src="game.js"></script>
 </body>
