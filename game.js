@@ -47,12 +47,6 @@ function connectWebSocket() {
             resetToLobby();
           }, 2000);
           break;
-        case 'opponent_mouse_move':
-          handleOpponentMouseMove(payload);
-          break;
-        case 'opponent_card_hover':
-          handleOpponentCardHover(payload);
-          break;
         default:
           console.log('Unknown message type:', type);
       }
@@ -191,68 +185,6 @@ function setupEventListeners() {
   document.getElementById('exit-btn').addEventListener('click', () => {
     sendMsg('leave_room');
     resetToLobby();
-  });
-
-  // Custom mouse tracking
-  const cursorSelf = document.getElementById('cursor-self');
-  let lastMouseMoveTime = 0;
-  const throttleLimit = 50;
-
-  window.addEventListener('mousemove', (e) => {
-    cursorSelf.style.display = 'block';
-    cursorSelf.style.left = e.clientX + 'px';
-    cursorSelf.style.top = e.clientY + 'px';
-
-    // Throttle mouse moves to server
-    const now = Date.now();
-    if (now - lastMouseMoveTime > throttleLimit) {
-      const x = e.clientX / window.innerWidth;
-      const y = e.clientY / window.innerHeight;
-      sendMsg('mouse_move', { x, y });
-      lastMouseMoveTime = now;
-    }
-  });
-
-  window.addEventListener('mouseout', (e) => {
-    if (!e.relatedTarget) {
-      cursorSelf.style.display = 'none';
-    }
-  });
-
-  // Card hover tracking using mousemove on grid
-  const cardGrid = document.getElementById('card-grid');
-  let currentlyHoveredIndex = null;
-
-  cardGrid.addEventListener('mousemove', (e) => {
-    const cardEl = e.target.closest('.memory-card');
-    if (cardEl && cardEl.classList.contains('interactable')) {
-      const index = parseInt(cardEl.getAttribute('data-index'));
-      if (currentlyHoveredIndex !== index) {
-        if (currentlyHoveredIndex !== null) {
-          const prevEl = cardGrid.children[currentlyHoveredIndex];
-          if (prevEl) prevEl.classList.remove('self-hovered');
-        }
-        cardEl.classList.add('self-hovered');
-        currentlyHoveredIndex = index;
-        sendMsg('card_hover', { index });
-      }
-    } else {
-      if (currentlyHoveredIndex !== null) {
-        const prevEl = cardGrid.children[currentlyHoveredIndex];
-        if (prevEl) prevEl.classList.remove('self-hovered');
-        currentlyHoveredIndex = null;
-        sendMsg('card_hover', { index: null });
-      }
-    }
-  });
-
-  cardGrid.addEventListener('mouseleave', () => {
-    if (currentlyHoveredIndex !== null) {
-      const prevEl = cardGrid.children[currentlyHoveredIndex];
-      if (prevEl) prevEl.classList.remove('self-hovered');
-      currentlyHoveredIndex = null;
-      sendMsg('card_hover', { index: null });
-    }
   });
 }
 
@@ -699,36 +631,6 @@ function resetToLobby() {
   document.getElementById('join-room-input').value = '';
   document.getElementById('join-error-msg').textContent = '';
 
-  const cursorOpp = document.getElementById('cursor-opp');
-  if (cursorOpp) cursorOpp.style.display = 'none';
-
   // Return to lobby
   showLobby();
-}
-
-function handleOpponentMouseMove(payload) {
-  const cursorOpp = document.getElementById('cursor-opp');
-  if (cursorOpp) {
-    cursorOpp.style.display = 'block';
-    cursorOpp.style.left = (payload.x * window.innerWidth) + 'px';
-    cursorOpp.style.top = (payload.y * window.innerHeight) + 'px';
-  }
-}
-
-function handleOpponentCardHover(payload) {
-  const cardGrid = document.getElementById('card-grid');
-  if (!cardGrid) return;
-  
-  // Remove opponent-hovered from all cards
-  Array.from(cardGrid.children).forEach(cardEl => {
-    cardEl.classList.remove('opponent-hovered');
-  });
-
-  // Add to target card
-  if (payload.index !== null && payload.index !== undefined) {
-    const targetCard = cardGrid.children[payload.index];
-    if (targetCard) {
-      targetCard.classList.add('opponent-hovered');
-    }
-  }
 }
