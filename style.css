@@ -840,7 +840,461 @@ h1, h2, h3, h4 {
   }
 }
 
-/* Custom cursors for real-time multiplayer cursor sharing */
+/* ========================================
+   LOBBY / ROOM SCREEN
+   ======================================== */
+
+.room-container {
+  width: 100%;
+  max-width: 960px;
+  padding: 16px;
+}
+
+.room-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+/* Settings Panel */
+.settings-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.panel-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  margin-bottom: 4px;
+}
+
+.settings-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.settings-group label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+}
+
+.select-input {
+  font-size: 14px;
+  font-weight: 500;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  background-color: var(--bg);
+  color: var(--text-primary);
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+}
+
+.select-input:focus {
+  border-color: var(--accent-black);
+}
+
+.select-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Players Panel */
+.players-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.room-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.room-code-badge {
+  background: var(--accent-black);
+  color: var(--accent-white);
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  user-select: none;
+}
+
+.room-code-badge:hover { opacity: 0.8; }
+
+.players-slots-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.player-slot {
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  min-height: 110px;
+  position: relative;
+  transition: border-color 0.2s;
+}
+
+.player-slot.empty {
+  border-style: dashed;
+  color: var(--text-muted);
+}
+
+.player-slot.ready-state {
+  border-color: var(--green);
+}
+
+.player-slot .slot-num {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+.player-slot .slot-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.player-slot .slot-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player-slot .slot-status {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.player-slot.ready-state .slot-status {
+  color: var(--green);
+}
+
+.player-slot .slot-host-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: var(--accent-black);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.lobby-action-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.lobby-action-row .btn {
+  flex: 1;
+  padding: 14px 20px;
+  font-size: 15px;
+}
+
+/* Slot color circles */
+.slot-color-0 { background: #007aff; }
+.slot-color-1 { background: #ef4444; }
+.slot-color-2 { background: #ffcc00; }
+.slot-color-3 { background: #34c759; }
+
+/* Single player button style */
+#single-player-btn {
+  background: linear-gradient(135deg, #007aff, #5856d6);
+  color: white;
+  font-weight: 700;
+  border: none;
+}
+
+
+/* ========================================
+   GAME SCREEN — CORNER PROFILES
+   ======================================== */
+
+#screen-game {
+  position: relative;
+  overflow: hidden;
+  justify-content: center;
+  align-items: center;
+  padding: 90px 12px 90px;
+}
+
+.corner-profile {
+  position: fixed;
+  z-index: 100;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  padding: 10px 14px;
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 130px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.corner-profile.visible { display: flex; }
+
+.corner-profile.active-turn {
+  box-shadow: 0 0 0 2.5px var(--slot-color, #007aff), 0 6px 20px rgba(0,0,0,0.12);
+}
+
+.corner-profile.inactive-turn {
+  opacity: 0.5;
+}
+
+.corner-profile.top-left {
+  top: 12px;
+  left: 12px;
+}
+
+.corner-profile.top-right {
+  top: 12px;
+  right: 12px;
+}
+
+.corner-profile.bottom-left {
+  bottom: 12px;
+  left: 12px;
+}
+
+.corner-profile.bottom-right {
+  bottom: 12px;
+  right: 12px;
+}
+
+.cp-top-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cp-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 800;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.cp-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cp-score {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.cp-combo {
+  font-size: 11px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #ff453a, #ff9f0a);
+  color: #fff;
+  border-radius: 6px;
+  padding: 1px 5px;
+  display: none;
+}
+
+.cp-combo.show { display: inline-block; }
+
+/* Center HUD */
+.center-game-hud {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  z-index: 100;
+  background: rgba(255,255,255,0.95);
+  backdrop-filter: blur(12px);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 8px 20px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+}
+
+.hud-item {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.hud-item span {
+  color: var(--text-primary);
+  font-weight: 800;
+}
+
+.hud-item.hidden { display: none; }
+
+/* Emoji Reaction Panel */
+.reaction-trigger-panel {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: none;
+  gap: 10px;
+  z-index: 200;
+  background: rgba(255,255,255,0.95);
+  backdrop-filter: blur(12px);
+  border: 1.5px solid var(--border);
+  border-radius: 99px;
+  padding: 10px 20px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.10);
+}
+
+.reaction-trigger-panel.visible {
+  display: flex;
+}
+
+.reaction-btn {
+  width: 44px;
+  height: 44px;
+  border: none;
+  background: transparent;
+  font-size: 26px;
+  cursor: pointer;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.12s, background 0.12s;
+}
+
+.reaction-btn:hover {
+  background: var(--surface);
+  transform: scale(1.2);
+}
+
+.reaction-btn:active {
+  transform: scale(0.95);
+}
+
+/* Floating Emoji */
+@keyframes floatEmoji {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  60% { opacity: 1; transform: translateY(-80px) scale(1.2); }
+  100% { opacity: 0; transform: translateY(-130px) scale(0.8); }
+}
+
+.floating-emoji {
+  position: fixed;
+  font-size: 40px;
+  pointer-events: none;
+  z-index: 9998;
+  animation: floatEmoji 1.5s ease-out forwards;
+}
+
+/* ========================================
+   CARD BACK THEMES
+   ======================================== */
+
+/* Classic (default already dark) */
+.card-back.theme-classic {
+  background-color: #1d1d1f;
+  color: #fff;
+}
+
+/* Neon: dark bg + purple/blue neon glow border */
+.card-back.theme-neon {
+  background: linear-gradient(135deg, #1a0532, #0d1b4d);
+  color: #bf5fff;
+  border: 1.5px solid #7b2fff !important;
+  box-shadow: 0 0 16px rgba(123, 47, 255, 0.5), inset 0 0 20px rgba(123, 47, 255, 0.1);
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-shadow: 0 0 10px rgba(191, 95, 255, 0.9);
+}
+
+/* Cosmic: deep space purple, starfield-like */
+.card-back.theme-cosmic {
+  background: linear-gradient(135deg, #0c0c1e, #1a1040, #0c0c1e);
+  color: #f0c040;
+  border: 1.5px solid rgba(240, 192, 64, 0.5) !important;
+  box-shadow: 0 0 20px rgba(240, 192, 64, 0.2), inset 0 0 20px rgba(100, 60, 180, 0.2);
+  font-size: 20px;
+  text-shadow: 0 0 12px rgba(240, 192, 64, 0.9);
+}
+
+/* ========================================
+   MULTI-PLAYER CUSTOM CURSORS
+   ======================================== */
+
 .custom-cursor {
   position: fixed;
   pointer-events: none;
@@ -851,45 +1305,55 @@ h1, h2, h3, h4 {
   z-index: 9999;
   display: none;
   will-change: left, top;
+  transition: left 0.06s linear, top 0.06s linear;
 }
 
 #local-cursor {
   background-color: rgba(0, 122, 255, 0.35);
   border: 2px solid #007aff;
-  box-shadow: 0 0 10px rgba(0, 122, 255, 0.5);
+  box-shadow: 0 0 10px rgba(0, 122, 255, 0.6);
 }
 
-#remote-cursor {
+/* Remote cursors have class like .cursor-color-1 etc. */
+.cursor-color-0 {
+  background-color: rgba(0, 122, 255, 0.35);
+  border: 2px solid #007aff;
+  box-shadow: 0 0 10px rgba(0, 122, 255, 0.6);
+}
+.cursor-color-1 {
   background-color: rgba(239, 68, 68, 0.35);
-  border: 2px solid var(--red);
-  box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
-  transition: left 0.1s ease-out, top 0.1s ease-out; /* Smooth remote movement */
+  border: 2px solid #ef4444;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.6);
+}
+.cursor-color-2 {
+  background-color: rgba(255, 204, 0, 0.35);
+  border: 2px solid #ffcc00;
+  box-shadow: 0 0 10px rgba(255, 204, 0, 0.6);
+}
+.cursor-color-3 {
+  background-color: rgba(52, 199, 89, 0.35);
+  border: 2px solid #34c759;
+  box-shadow: 0 0 10px rgba(52, 199, 89, 0.6);
 }
 
 .cursor-label {
   position: absolute;
   top: 18px;
-  left: 18px;
-  background-color: rgba(29, 29, 31, 0.85);
+  left: 8px;
+  background-color: rgba(29, 29, 31, 0.88);
   color: #ffffff;
   padding: 3px 8px;
   border-radius: 6px;
   font-size: 11px;
   font-weight: 600;
   white-space: nowrap;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.18);
   pointer-events: none;
 }
 
 /* Hide default cursor in game board when active */
 #screen-game.active {
   cursor: none;
-}
-
-/* Enable custom local cursor only when game screen is active and we are in playing state */
-#screen-game.active #local-cursor {
-  display: block;
 }
 
 /* Glow up and zoom for hovered cards */
@@ -903,3 +1367,72 @@ h1, h2, h3, h4 {
   box-shadow: 0 8px 24px rgba(239, 68, 68, 0.4);
 }
 
+/* ========================================
+   ROULETTE ANIMATION OVERLAY
+   ======================================== */
+
+#overlay-roulette {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(12px);
+  z-index: 300;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+}
+
+#overlay-roulette.active { display: flex; }
+
+.roulette-label {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.roulette-name {
+  font-size: 56px;
+  font-weight: 900;
+  color: var(--text-primary);
+  letter-spacing: -0.03em;
+  transition: opacity 0.05s;
+  text-align: center;
+  max-width: 400px;
+}
+
+/* ========================================
+   RESPONSIVE — MOBILE OVERRIDES
+   ======================================== */
+
+@media (max-width: 700px) {
+  .room-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .corner-profile {
+    padding: 6px 10px;
+    min-width: 100px;
+  }
+
+  .cp-name { max-width: 60px; }
+
+  .cp-avatar {
+    width: 26px;
+    height: 26px;
+    font-size: 11px;
+  }
+
+  .center-game-hud {
+    padding: 6px 14px;
+    gap: 10px;
+    font-size: 12px;
+  }
+
+  #screen-game {
+    padding: 80px 4px 80px;
+  }
+}
