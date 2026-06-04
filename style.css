@@ -839,3 +839,67 @@ h1, h2, h3, h4 {
     width: 100%;
   }
 }
+
+/* Custom cursors for real-time multiplayer cursor sharing */
+.custom-cursor {
+  position: fixed;
+  pointer-events: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 9999;
+  display: none;
+  will-change: left, top;
+}
+
+#local-cursor {
+  background-color: rgba(0, 122, 255, 0.35);
+  border: 2px solid #007aff;
+  box-shadow: 0 0 10px rgba(0, 122, 255, 0.5);
+}
+
+#remote-cursor {
+  background-color: rgba(239, 68, 68, 0.35);
+  border: 2px solid var(--red);
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+  transition: left 0.1s ease-out, top 0.1s ease-out; /* Smooth remote movement */
+}
+
+.cursor-label {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  background-color: rgba(29, 29, 31, 0.85);
+  color: #ffffff;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  pointer-events: none;
+}
+
+/* Hide default cursor in game board when active */
+#screen-game.active {
+  cursor: none;
+}
+
+/* Enable custom local cursor only when game screen is active and we are in playing state */
+#screen-game.active #local-cursor {
+  display: block;
+}
+
+/* Glow up and zoom for hovered cards */
+.memory-card.interactable:hover .card-inner {
+  transform: translateY(-4px) scale(1.03);
+  box-shadow: 0 8px 24px rgba(0, 122, 255, 0.3);
+}
+
+.memory-card.remote-hover .card-inner {
+  transform: translateY(-4px) scale(1.03);
+  box-shadow: 0 8px 24px rgba(239, 68, 68, 0.4);
+}
+
