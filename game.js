@@ -1,6 +1,7 @@
 // WebSocket Connection
-const socketUrl = 'ws://' + (window.location.hostname || 'localhost') + ':8080';
-let socket;
+const socketUrl = window.location.hostname === 'localhost'
+  ? 'ws://localhost:8080'
+  : 'wss://online-card-production.up.railway.app';let socket;
 
 let playerName = '';
 let roomCode = '';
@@ -11,6 +12,8 @@ let gameStarted = false;
 let isTransitioning = false;
 let latestState = null;
 let shakeTimeout = null;
+let currentlyHoveredCardIndex = null;
+let lastCursorSendTime = 0;
 
 // Initialize
 window.addEventListener('DOMContentLoaded', () => {
@@ -46,6 +49,12 @@ function connectWebSocket() {
           setTimeout(() => {
             resetToLobby();
           }, 2000);
+          break;
+        case 'cursor_move':
+          handleRemoteCursorMove(payload);
+          break;
+        case 'card_hover':
+          handleRemoteCardHover(payload);
           break;
         default:
           console.log('Unknown message type:', type);
@@ -170,6 +179,32 @@ function setupEventListeners() {
     const index = cardEl.getAttribute('data-index');
     if (index !== null) {
       sendMsg('flip_card', { index: parseInt(index) });
+    }
+  });
+
+  // Game Grid Hover Syncing
+  document.getElementById('card-grid').addEventListener('mousemove', (e) => {
+    if (!gameStarted || !gameState || gameState.phase !== 'playing') return;
+    const cardEl = e.target.closest('.memory-card');
+    if (cardEl) {
+      const index = parseInt(cardEl.getAttribute('data-index'));
+      if (currentlyHoveredCardIndex !== index) {
+        currentlyHoveredCardIndex = index;
+        sendMsg('card_hover', { index });
+      }
+    } else {
+      if (currentlyHoveredCardIndex !== null) {
+        currentlyHoveredCardIndex = null;
+        sendMsg('card_hover', { index: null });
+      }
+    }
+  });
+
+  document.getElementById('card-grid').addEventListener('mouseleave', () => {
+    if (!gameStarted || !gameState || gameState.phase !== 'playing') return;
+    if (currentlyHoveredCardIndex !== null) {
+      currentlyHoveredCardIndex = null;
+      sendMsg('card_hover', { index: null });
     }
   });
 
@@ -535,6 +570,12 @@ function renderGameBoard(room) {
 function showFinishScreen(room) {
   showScreen('screen-finish');
 
+  // Hide custom cursors
+  const localCursor = document.getElementById('local-cursor');
+  const remoteCursor = document.getElementById('remote-cursor');
+  if (localCursor) localCursor.style.display = 'none';
+  if (remoteCursor) remoteCursor.style.display = 'none';
+
   // Reset play again button ready state
   const playAgainBtn = document.getElementById('play-again-btn');
   const selfPlayer = room.players.find(p => p.name === playerName);
@@ -618,11 +659,18 @@ function resetToLobby() {
   gameStarted = false;
   isTransitioning = false;
   latestState = null;
+  currentlyHoveredCardIndex = null;
   
   if (shakeTimeout) {
     clearTimeout(shakeTimeout);
     shakeTimeout = null;
   }
+
+  // Hide custom cursors
+  const localCursor = document.getElementById('local-cursor');
+  const remoteCursor = document.getElementById('remote-cursor');
+  if (localCursor) localCursor.style.display = 'none';
+  if (remoteCursor) remoteCursor.style.display = 'none';
 
   // Clear card grid cache
   document.getElementById('card-grid').innerHTML = '';
@@ -634,3 +682,67 @@ function resetToLobby() {
   // Return to lobby
   showLobby();
 }
+
+const sendCursorInterval = 30; // ms throttle for mouse position sync
+
+function handleRemoteCursorMove(payload) {
+  const remoteCursor = document.getElementById('remote-cursor');
+  if (remoteCursor) {
+    const gameScreen = document.getElementById('screen-game');
+    if (gameScreen && gameScreen.classList.contains('active')) {
+      remoteCursor.style.display = 'block';
+      remoteCursor.style.left = `${payload.x * window.innerWidth}px`;
+      remoteCursor.style.top = `${payload.y * window.innerHeight}px`;
+      const label = remoteCursor.querySelector('.cursor-label');
+      if (label) {
+        label.textContent = payload.sender;
+      }
+    } else {
+      remoteCursor.style.display = 'none';
+    }
+  }
+}
+
+function handleRemoteCardHover(payload) {
+  document.querySelectorAll('.memory-card').forEach(c => c.classList.remove('remote-hover'));
+  if (payload.index !== null) {
+    const card = document.querySelector(`.memory-card[data-index="${payload.index}"]`);
+    if (card) {
+      card.classList.add('remote-hover');
+    }
+  }
+}
+
+window.addEventListener('mousemove', (e) => {
+  const localCursor = document.getElementById('local-cursor');
+  const gameScreen = document.getElementById('screen-game');
+  
+  if (gameScreen && gameScreen.classList.contains('active')) {
+    if (localCursor) {
+      localCursor.style.display = 'block';
+      localCursor.style.left = `${e.clientX}px`;
+      localCursor.style.top = `${e.clientY}px`;
+    }
+
+    if (gameStarted && gameState && gameState.phase === 'playing') {
+      const now = Date.now();
+      if (now - lastCursorSendTime >= sendCursorInterval) {
+        lastCursorSendTime = now;
+        const normalizedX = e.clientX / window.innerWidth;
+        const normalizedY = e.clientY / window.innerHeight;
+        sendMsg('cursor_move', { x: normalizedX, y: normalizedY });
+      }
+    }
+  } else {
+    if (localCursor) {
+      localCursor.style.display = 'none';
+    }
+  }
+});
+
+document.addEventListener('mouseleave', () => {
+  const localCursor = document.getElementById('local-cursor');
+  if (localCursor) {
+    localCursor.style.display = 'none';
+  }
+});
