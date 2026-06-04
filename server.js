@@ -320,31 +320,6 @@ wss.on('connection', (ws) => {
           break;
         }
 
-        case 'mouse_move': {
-          const room = rooms.get(ws.roomCode);
-          if (!room) return;
-          const opponent = room.players.find(p => p.ws !== ws);
-          if (opponent) {
-            sendToClient(opponent.ws, 'opponent_mouse_move', {
-              x: payload.x,
-              y: payload.y
-            });
-          }
-          break;
-        }
-
-        case 'card_hover': {
-          const room = rooms.get(ws.roomCode);
-          if (!room) return;
-          const opponent = room.players.find(p => p.ws !== ws);
-          if (opponent) {
-            sendToClient(opponent.ws, 'opponent_card_hover', {
-              index: payload.index
-            });
-          }
-          break;
-        }
-
         default:
           console.log('Unhandled message type:', type);
       }
